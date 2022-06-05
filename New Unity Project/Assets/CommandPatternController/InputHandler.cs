@@ -6,7 +6,12 @@ public class InputHandler : MonoBehaviour
 {
     public GameObject player;
     Animator anim;
-    Command keyQ, keyW, keyE;
+    Command keyQ, keyW, keyE, upArrow;
+    List<Command> oldCommands = new List<Command>();
+
+    Coroutine replayCoroutine;
+    bool shouldStartReplay;
+    bool isReplaying;
 
     // Start is called before the first frame update
     void Start()
@@ -14,28 +19,106 @@ public class InputHandler : MonoBehaviour
         keyQ = new PerformJump();
         keyW = new PerformKick();
         keyE = new PerformPunch();
+        upArrow = new MoveForward();
         anim = player.GetComponent<Animator>();
+        Camera.main.GetComponent<CameraFollow360>().player = player.transform;
     }
 
     // Update is called once per frame
     void Update()
     {
-        if(Input.GetKeyDown(KeyCode.Q))
-        {
-            keyQ.Execute(anim);
-        }
-        else if(Input.GetKeyDown(KeyCode.W))
-        {
-            keyW.Execute(anim);
-        }
-        else if(Input.GetKeyDown(KeyCode.E))
-        {
-            keyE.Execute(anim);
-        }
+        if(!isReplaying)
+            HandleInput();
+        StartReplay();
+        
 
 
 
 
         
     }
+
+    void HandleInput()
+    {
+        if(Input.GetKeyDown(KeyCode.Q))
+        {
+            keyQ.Execute(anim);
+            oldCommands.Add(keyQ);
+        }
+        else if(Input.GetKeyDown(KeyCode.W))
+        {
+            keyW.Execute(anim);
+            oldCommands.Add(keyQ);
+        }
+        else if(Input.GetKeyDown(KeyCode.E))
+        {
+            keyE.Execute(anim);
+            oldCommands.Add(keyE);
+        }
+        else if(Input.GetKeyDown(KeyCode.UpArrow))
+        {
+            upArrow.Execute(anim);
+            oldCommands.Add(upArrow);
+        }
+        if(Input.GetKeyDown(KeyCode.Space))
+            shouldStartReplay = true;
+        
+        if(Input.GetKeyDown(KeyCode.Z))
+        {
+            UndoLastCommand();
+        }
+    
+    }
+
+    void UndoLastCommand()
+    {
+        Command c = oldCommands[oldCommands.Count-1];
+        c.Execute(anim);
+        oldCommands.RemoveAt(oldCommands.Count-1);
+    }
+
+
+
+    void StartReplay()
+    {
+        if(shouldStartReplay && oldCommands.Count>0)
+        {
+            shouldStartReplay = false;
+            if(replayCoroutine != null)
+            {
+                StopCoroutine(replayCoroutine);
+            }
+            replayCoroutine = StartCoroutine(ReplayCommands());
+        }
+    }
+
+
+    IEnumerator ReplayCommands ()
+    {
+        isReplaying = true;
+
+        for(int i =0; i< oldCommands.Count; i++)
+        {
+            oldCommands[i].Execute(anim);
+            yield return new WaitForSeconds(1f);
+        }
+
+        isReplaying = false;
+        
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

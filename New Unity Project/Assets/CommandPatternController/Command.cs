@@ -39,6 +39,16 @@ public class PerformPunch: Command
     }
 }
 
+public class MoveForward: Command 
+{
+    public override void Execute(Animator anim)
+    {
+        anim.SetTrigger("isWalking");
+    }
+}
+
+
+
 
 
 
